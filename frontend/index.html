@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koncerty — Panel Administratora</title>
+
+    <!-- Czcionka -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Style aplikacji -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- FullCalendar -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/pl.js"></script>
+</head>
+<body>
+
+<!-- ========================================== -->
+<!-- EKRAN LOGOWANIA / REJESTRACJI -->
+<!-- ========================================== -->
+<div id="login-container" class="d-none">
+
+    <!-- Karta logowania -->
+    <div class="login-card" id="login-form-card">
+        <div class="text-center mb-4">
+            <div class="login-brand-icon"><i class="bi bi-music-note-beamed"></i></div>
+            <h3 class="fw-bold mt-2">Panel Administratora</h3>
+            <p class="text-muted small">Zaloguj się, aby zarządzać koncertami</p>
+        </div>
+        <form onsubmit="App.auth.handleLogin(event)" novalidate>
+            <div class="mb-3">
+                <label class="form-label" for="login_user">Użytkownik</label>
+                <input type="text" id="login_user" class="form-control" placeholder="Wpisz login" autocomplete="username" required>
+            </div>
+            <div class="mb-4">
+                <label class="form-label" for="login_pass">Hasło</label>
+                <input type="password" id="login_pass" class="form-control" placeholder="••••••••" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn btn-purple w-100 fw-bold py-2">Zaloguj się</button>
+            <div class="text-center mt-3 small text-muted">
+                Nie masz konta? <span class="toggle-auth" onclick="App.auth.toggleAuthMode()">Zarejestruj się</span>
+            </div>
+        </form>
+    </div>
+
+    <!-- Karta rejestracji -->
+    <div class="login-card d-none" id="register-form-card">
+        <div class="text-center mb-4">
+            <div class="login-brand-icon"><i class="bi bi-person-plus"></i></div>
+            <h3 class="fw-bold mt-2">Rejestracja</h3>
+            <p class="text-muted small">Utwórz nowe konto administratora</p>
+        </div>
+        <form onsubmit="App.auth.handleRegister(event)" novalidate>
+            <div class="mb-3">
+                <label class="form-label" for="reg_user">Nowy użytkownik</label>
+                <input type="text" id="reg_user" class="form-control" placeholder="Wpisz login" autocomplete="username" required>
+            </div>
+            <div class="mb-4">
+                <label class="form-label" for="reg_pass">Hasło</label>
+                <input type="password" id="reg_pass" class="form-control" placeholder="••••••••" autocomplete="new-password" required>
+            </div>
+            <button type="submit" class="btn btn-success w-100 fw-bold py-2">Zarejestruj się</button>
+            <div class="text-center mt-3 small text-muted">
+                Masz już konto? <span class="toggle-auth" onclick="App.auth.toggleAuthMode()">Zaloguj się</span>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+<!-- ========================================== -->
+<!-- GŁÓWNA APLIKACJA -->
+<!-- ========================================== -->
+<div id="app-container" class="d-none">
+
+    <!-- Górny pasek widoczny tylko na urządzeniach mobilnych -->
+    <div class="mobile-topbar">
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Otwórz menu"><i class="bi bi-list"></i></button>
+        <div class="brand"><i class="bi bi-music-note-beamed"></i> Koncerty</div>
+        <div style="width:38px;"></div>
+    </div>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="brand"><i class="bi bi-music-note-beamed"></i> Koncerty</div>
+        <nav class="nav flex-column mt-2" aria-label="Nawigacja główna">
+            <a onclick="App.nav.switchView('dashboardView', this)" class="nav-link active"><i class="bi bi-house-door"></i> Dashboard</a>
+            <a onclick="App.nav.switchView('koncertyView', this)" class="nav-link" id="nav-koncerty"><i class="bi bi-calendar-event"></i> Koncerty</a>
+            <a onclick="App.nav.switchView('kalendarzView', this)" class="nav-link"><i class="bi bi-calendar3"></i> Kalendarz</a>
+            <a class="nav-link disabled" aria-disabled="true"><i class="bi bi-gear"></i> Ustawienia <span class="nav-badge">Wkrótce</span></a>
+        </nav>
+        <div class="user-profile">
+            <div class="user-avatar"><i class="bi bi-person"></i></div>
+            <div>
+                <div class="text-white fw-bold" style="font-size: 0.9rem;" id="loggedUserName">Admin</div>
+                <button class="user-logout" onclick="App.auth.logout()">Wyloguj się</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- TREŚĆ GŁÓWNA -->
+    <div class="main-content">
+
+        <!-- WIDOK 1: DASHBOARD -->
+        <div id="dashboardView" class="view-section active">
+            <div class="page-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>Dashboard</h2>
+                    <p class="page-subtitle m-0">Przegląd najważniejszych informacji o koncertach</p>
+                </div>
+            </div>
+
+            <div class="row mb-4 g-3">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card stat-card h-100"><div class="card-body d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-calendar-check"></i></div>
+                        <div><div class="text-muted stat-label">Wszystkie koncerty</div><h3 class="m-0 fw-bold stat-value" id="totalConcertsCount">0</h3></div>
+                    </div></div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card stat-card h-100"><div class="card-body d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-success bg-opacity-10 text-success"><i class="bi bi-people-fill"></i></div>
+                        <div><div class="text-muted stat-label">Uczestnicy</div><h3 class="m-0 fw-bold stat-value" id="totalAttendeesCount">0</h3></div>
+                    </div></div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card stat-card h-100"><div class="card-body d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-ticket-perforated"></i></div>
+                        <div><div class="text-muted stat-label">Nadchodzące</div><h3 class="m-0 fw-bold stat-value" id="upcomingConcertsCount">0</h3></div>
+                    </div></div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card stat-card h-100"><div class="card-body d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-info bg-opacity-10 text-info"><i class="bi bi-graph-up-arrow"></i></div>
+                        <div><div class="text-muted stat-label">Średnia frekwencja</div><h3 class="m-0 fw-bold stat-value" id="avgAttendanceRate">0%</h3></div>
+                    </div></div>
+                </div>
+            </div>
+
+            <div class="card table-card">
+                <div class="card-body p-4">
+                    <h5 class="card-title fw-bold mb-4">Nadchodzące koncerty</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="text-muted small text-uppercase bg-light">
+                                <tr><th>Wydarzenie</th><th>Data i czas</th><th>Lokalizacja</th><th class="text-center">Pojemność</th></tr>
+                            </thead>
+                            <tbody id="dashboardEventsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WIDOK 2: KONCERTY -->
+        <div id="koncertyView" class="view-section">
+            <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h2>Koncerty</h2>
+                    <p class="page-subtitle m-0">Zarządzaj wydarzeniami i trasami koncertowymi</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary fw-bold" data-bs-toggle="modal" data-bs-target="#addTourModal"><i class="bi bi-map"></i> Dodaj trasę</button>
+                    <button class="btn btn-purple fw-bold" data-bs-toggle="modal" data-bs-target="#addSingleModal"><i class="bi bi-plus-lg"></i> Dodaj koncert</button>
+                </div>
+            </div>
+            <div class="card table-card">
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="input-group search-field">
+                                <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" id="searchInput" placeholder="Szukaj po nazwie, artyście, mieście lub klubie…" oninput="App.events.filterKoncerty()" aria-label="Szukaj koncertów">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="text-muted small text-uppercase bg-light border-bottom border-2">
+                                <tr><th class="py-3 border-0">Nazwa</th><th class="py-3 border-0">Data</th><th class="py-3 border-0">Miejsce</th><th class="py-3 border-0 text-center">Uczestnicy</th><th class="py-3 border-0 text-end">Akcje</th></tr>
+                            </thead>
+                            <tbody id="koncertyEventsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WIDOK 3: LISTA UCZESTNIKÓW KONCERTU (PAGINOWANA) -->
+        <div id="attendeesView" class="view-section">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <button class="btn btn-light border" onclick="App.nav.switchView('koncertyView', document.getElementById('nav-koncerty'))"><i class="bi bi-arrow-left"></i> Wróć</button>
+                <h2 class="fw-bold m-0" id="attendeesViewTitle">Uczestnicy koncertu</h2>
+            </div>
+
+            <div class="card table-card">
+                <div class="card-body p-4">
+                    <div class="row mb-4 d-flex justify-content-between">
+                        <div class="col-md-6">
+                            <div class="input-group search-field">
+                                <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" id="searchAttendeeInput" placeholder="Szukaj po nr biletu, nazwisku lub imieniu…" onkeydown="App.attendees.handleSearchKeydown(event)" aria-label="Szukaj uczestników">
+                                <button class="btn btn-primary" onclick="App.attendees.search()">Szukaj</button>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end text-muted mt-2" id="attendeesCountLabel"></div>
+                    </div>
+
+                    <div class="table-responsive mb-3">
+                        <table class="table table-hover align-middle">
+                            <thead class="text-muted small text-uppercase bg-light">
+                                <tr><th class="py-3">Imię i nazwisko (nr biletu)</th><th class="py-3">E-mail</th><th class="py-3">Telefon</th><th class="py-3 text-end">Akcje</th></tr>
+                            </thead>
+                            <tbody id="attendeesTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <nav aria-label="Paginacja uczestników">
+                        <ul class="pagination justify-content-center mb-0" id="paginationControls"></ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- WIDOK 4: KALENDARZ -->
+        <div id="kalendarzView" class="view-section">
+            <div class="page-header"><h2>Kalendarz</h2><p class="page-subtitle m-0">Wszystkie koncerty w ujęciu miesięcznym</p></div>
+            <div class="card table-card"><div class="card-body p-0"><div id="calendar" class="w-100"></div></div></div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Kontener powiadomień (toasty) -->
+<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ========================================== -->
+<!-- MODALE -->
+<!-- ========================================== -->
+
+<!-- Modal: dodaj pojedynczy koncert -->
+<div class="modal fade" id="addSingleModal" tabindex="-1" aria-labelledby="addSingleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="addSingleModalLabel">Dodaj pojedynczy koncert</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addSingleForm" class="row g-3">
+                    <div class="col-md-6"><label class="form-label" for="single_artist">Artysta</label><input type="text" class="form-control" id="single_artist" required></div>
+                    <div class="col-md-6"><label class="form-label" for="single_name">Nazwa wydarzenia</label><input type="text" class="form-control" id="single_name" required></div>
+                    <div class="col-md-6"><label class="form-label" for="single_city">Miasto</label><input type="text" class="form-control" id="single_city" required></div>
+                    <div class="col-md-6"><label class="form-label" for="single_place">Klub / Miejsce</label><input type="text" class="form-control" id="single_place" required></div>
+                    <div class="col-md-6"><label class="form-label" for="single_max_attendance">Max pojemność</label><input type="number" min="1" class="form-control" id="single_max_attendance" required></div>
+                    <div class="col-md-6"><label class="form-label" for="single_date">Data i godzina</label><input type="datetime-local" class="form-control" id="single_date" required></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-purple" id="submitSingleBtn" onclick="App.events.submitSingleEvent()">Dodaj koncert</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: dodaj trasę koncertową -->
+<div class="modal fade" id="addTourModal" tabindex="-1" aria-labelledby="addTourModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="addTourModalLabel">Dodaj trasę koncertową</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-5 border-end pe-4">
+                        <form id="addTourForm">
+                            <div class="mb-3">
+                                <label class="tour-step-label text-primary d-block mb-2">1. Dane główne trasy</label>
+                                <input type="text" class="form-control mb-2" id="tour_artist" placeholder="Artysta" required>
+                                <input type="text" class="form-control" id="tour_name" placeholder="Nazwa trasy" required>
+                            </div>
+                            <hr>
+                            <div class="mb-3">
+                                <label class="tour-step-label text-success d-block mb-2">2. Dodaj przystanek</label>
+                                <input type="text" class="form-control mb-2" id="tour_city" placeholder="Miasto" required>
+                                <input type="text" class="form-control mb-2" id="tour_place" placeholder="Klub / Miejsce" required>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6"><input type="number" min="1" class="form-control" id="tour_max" placeholder="Pojemność" required></div>
+                                    <div class="col-6"><input type="datetime-local" class="form-control" id="tour_date" required></div>
+                                </div>
+                                <button type="submit" class="btn btn-outline-success w-100"><i class="bi bi-plus"></i> Dodaj do kolejki</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-md-7 ps-4">
+                        <label class="tour-step-label text-secondary d-block mb-2">Oczekujące przystanki</label>
+                        <div class="tour-queue">
+                            <ul id="tourPendingList" class="list-group list-group-flush">
+                                <li class="list-group-item bg-transparent text-muted text-center" id="emptyTourMsg">Kolejka jest pusta. Dodaj pierwszy koncert.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-success fw-bold" id="submitTourBtn" disabled onclick="App.events.submitTour()">Zapisz całą trasę</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: edycja koncertu -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="editModalLabel">Edytuj koncert</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm" class="row g-3">
+                    <input type="hidden" id="edit_id">
+                    <div class="col-md-6"><label class="form-label" for="edit_artist">Artysta</label><input type="text" class="form-control" id="edit_artist" required></div>
+                    <div class="col-md-6"><label class="form-label" for="edit_name">Wydarzenie</label><input type="text" class="form-control" id="edit_name" required></div>
+                    <div class="col-md-6"><label class="form-label" for="edit_city">Miasto</label><input type="text" class="form-control" id="edit_city" required></div>
+                    <div class="col-md-6"><label class="form-label" for="edit_place">Miejsce</label><input type="text" class="form-control" id="edit_place" required></div>
+                    <div class="col-md-6"><label class="form-label" for="edit_max_attendance">Pojemność</label><input type="number" min="1" class="form-control" id="edit_max_attendance" required></div>
+                    <div class="col-md-6"><label class="form-label" for="edit_date">Data</label><input type="datetime-local" class="form-control" id="edit_date" required></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-primary" id="submitEditBtn" onclick="App.events.submitEdit()">Zapisz zmiany</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Skrypty aplikacji (kolejność ma znaczenie: state -> pozostałe moduły -> main) -->
+<script src="js/state.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/events.js"></script>
+<script src="js/attendees.js"></script>
+<script src="js/main.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,672 @@
+/* ==========================================================================
+   Koncerty — Panel Administratora
+   Spis treści:
+   1. Tokeny (zmienne CSS)
+   2. Reset / bazowe style
+   3. Ekran logowania i rejestracji
+   4. Layout aplikacji (sidebar + treść główna)
+   5. Nawigacja boczna
+   6. Komponenty: karty statystyk, karty tabel, przyciski
+   7. Tabele i akcje wierszy
+   8. Formularze i modale
+   9. Kalendarz (FullCalendar overrides)
+   10. Paginacja
+   11. Stany: ładowanie / pusto / błąd
+   12. Responsywność (mobile)
+   ========================================================================== */
+
+/* 1. Tokeny
+   ========================================================================== */
+:root {
+  /* Kolory marki */
+  --color-primary: #6c4fd1;
+  --color-primary-dark: #5a3fb8;
+  --color-primary-soft: #f1ecfc;
+
+  /* Kolory stanu */
+  --color-success: #17a673;
+  --color-success-soft: #e3f7ef;
+  --color-warning: #e79a1f;
+  --color-warning-soft: #fdf1de;
+  --color-danger: #e5484d;
+  --color-danger-soft: #fbe8e9;
+  --color-info: #2f8fe0;
+  --color-info-soft: #e8f3fd;
+
+  /* Neutralne */
+  --color-bg: #f4f5fa;
+  --color-surface: #ffffff;
+  --color-sidebar: #17172b;
+  --color-sidebar-hover: #23233d;
+  --color-border: #e8e8f1;
+  --color-text: #1f2033;
+  --color-text-muted: #75758c;
+  --color-text-subtle: #a3a3b8;
+
+  /* Typografia */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Promienie i cienie */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(23, 23, 43, 0.05);
+  --shadow-md: 0 6px 16px rgba(23, 23, 43, 0.06);
+  --shadow-lg: 0 20px 45px rgba(23, 23, 43, 0.16);
+
+  /* Odstępy */
+  --sidebar-width: 260px;
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.25s ease;
+}
+
+/* 2. Reset / bazowe style
+   ========================================================================== */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: inherit;
+}
+
+/* Widoczny fokus klawiaturowy dla dostępności */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+.nav-link:focus-visible,
+.page-link:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+/* 3. Ekran logowania i rejestracji
+   ========================================================================== */
+#login-container {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(108, 79, 209, 0.35), transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(47, 143, 224, 0.25), transparent 45%),
+    var(--color-sidebar);
+  padding: 24px;
+}
+
+.login-card {
+  background: var(--color-surface);
+  padding: 40px;
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg);
+}
+
+.login-brand-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 1.5rem;
+}
+
+.toggle-auth {
+  cursor: pointer;
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--transition-fast);
+}
+
+.toggle-auth:hover {
+  border-bottom-color: var(--color-primary);
+}
+
+/* 4. Layout aplikacji
+   ========================================================================== */
+#app-container {
+  align-items: stretch;
+}
+
+.main-content {
+  margin-left: var(--sidebar-width);
+  padding: 32px 36px;
+  width: calc(100% - var(--sidebar-width));
+  min-height: 100vh;
+}
+
+.page-header {
+  margin-bottom: 28px;
+}
+
+.page-header h2 {
+  font-weight: 700;
+  font-size: 1.6rem;
+}
+
+.page-subtitle {
+  color: var(--color-text-muted);
+  font-size: 0.925rem;
+  margin-top: 2px;
+}
+
+/* Przycisk hamburgera widoczny tylko na mobile */
+.mobile-topbar {
+  display: none;
+}
+
+/* 5. Nawigacja boczna
+   ========================================================================== */
+.sidebar {
+  background-color: var(--color-sidebar);
+  color: var(--color-text-subtle);
+  min-height: 100vh;
+  width: var(--sidebar-width);
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 1030;
+  transition: transform var(--transition-base);
+}
+
+.sidebar .brand {
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  padding: 24px 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar .brand i {
+  color: var(--color-primary);
+  font-size: 1.4rem;
+}
+
+.sidebar nav {
+  padding: 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar .nav-link {
+  color: var(--color-text-subtle);
+  padding: 11px 16px;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-size: 0.925rem;
+  font-weight: 500;
+}
+
+.sidebar .nav-link i {
+  font-size: 1.05rem;
+  width: 20px;
+  text-align: center;
+}
+
+.sidebar .nav-link:hover {
+  background-color: var(--color-sidebar-hover);
+  color: #fff;
+}
+
+.sidebar .nav-link.active {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+.sidebar .nav-link.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.sidebar .nav-badge {
+  margin-left: auto;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--color-sidebar-hover);
+  color: var(--color-text-subtle);
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.sidebar .user-profile {
+  margin-top: auto;
+  padding: 18px 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar .user-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--color-sidebar-hover);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar .user-logout {
+  font-size: 0.78rem;
+  cursor: pointer;
+  color: var(--color-text-subtle);
+  background: none;
+  border: none;
+  padding: 0;
+  transition: color var(--transition-fast);
+}
+
+.sidebar .user-logout:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+/* 6. Komponenty
+   ========================================================================== */
+.btn {
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.btn-purple {
+  background-color: var(--color-primary);
+  color: #fff;
+  border: none;
+}
+
+.btn-purple:hover,
+.btn-purple:focus {
+  background-color: var(--color-primary-dark);
+  color: #fff;
+}
+
+.card {
+  border: none;
+  border-radius: var(--radius-md);
+}
+
+.stat-card,
+.table-card {
+  border: none;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-card {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+}
+
+.stat-label {
+  font-size: 0.82rem;
+}
+
+/* 7. Tabele i akcje wierszy
+   ========================================================================== */
+.table-card .card-title {
+  font-size: 1.05rem;
+}
+
+.table > :not(caption) > * > * {
+  padding: 14px 12px;
+}
+
+.table thead th {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+.table-hover > tbody > tr:hover > * {
+  background-color: var(--color-primary-soft);
+}
+
+.event-thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-sm);
+  background: var(--color-sidebar);
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+
+.action-icon {
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+  background: none;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-icon.edit:hover {
+  color: var(--color-primary);
+  background-color: var(--color-primary-soft);
+}
+
+.action-icon.delete:hover {
+  color: var(--color-danger);
+  background-color: var(--color-danger-soft);
+}
+
+.attendance-pill {
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-weight: 600;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.attendance-pill:hover {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-soft) !important;
+}
+
+.search-field .input-group-text {
+  border-right: none;
+}
+
+.search-field .form-control {
+  border-left: none;
+}
+
+.search-field .form-control:focus {
+  border-left: none;
+  box-shadow: none;
+}
+
+.search-field:focus-within {
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+  border-radius: var(--radius-sm);
+}
+
+/* 8. Formularze i modale
+   ========================================================================== */
+.form-label {
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+}
+
+.modal-content {
+  border-radius: var(--radius-lg);
+  border: none;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-header,
+.modal-footer {
+  border: none;
+}
+
+.modal-header {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.tour-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tour-queue {
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  min-height: 250px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.tour-item {
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+/* 9. Kalendarz
+   ========================================================================== */
+.fc {
+  background-color: var(--color-surface);
+  padding: 20px;
+  border-radius: var(--radius-md);
+}
+
+.fc .fc-button-primary {
+  background-color: #fff;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  text-transform: capitalize;
+  font-weight: 500;
+}
+
+.fc .fc-button-primary:not(:disabled):hover {
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-color: var(--color-primary-soft);
+}
+
+.fc .fc-button-primary:not(:disabled):active,
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: none;
+}
+
+.fc-event {
+  border: none !important;
+  padding: 3px 6px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.fc-toolbar-title {
+  font-weight: 700;
+  font-size: 1.2rem !important;
+}
+
+/* 10. Paginacja
+   ========================================================================== */
+.pagination .page-link {
+  color: var(--color-primary);
+  cursor: pointer;
+  border-color: var(--color-border);
+  font-weight: 500;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.pagination .page-item.disabled .page-link {
+  color: var(--color-text-subtle);
+}
+
+/* 11. Stany: ładowanie / pusto / błąd
+   ========================================================================== */
+.state-message {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--color-text-muted);
+}
+
+.state-message i {
+  font-size: 1.8rem;
+  display: block;
+  margin-bottom: 10px;
+  color: var(--color-text-subtle);
+}
+
+.state-message.is-error {
+  color: var(--color-danger);
+}
+
+.state-message.is-error i {
+  color: var(--color-danger);
+}
+
+/* Widoki SPA */
+.view-section {
+  display: none;
+}
+
+.view-section.active {
+  display: block;
+  animation: fadeIn var(--transition-base);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view-section.active,
+  .stat-card,
+  .sidebar {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* 12. Responsywność
+   ========================================================================== */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 15, 30, 0.45);
+  z-index: 1020;
+}
+
+@media (max-width: 991.98px) {
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--color-surface);
+    padding: 14px 18px;
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 1010;
+  }
+
+  .mobile-topbar .brand {
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-text);
+  }
+
+  .mobile-topbar .brand i {
+    color: var(--color-primary);
+  }
+
+  .mobile-menu-btn {
+    border: 1px solid var(--color-border);
+    background: #fff;
+    border-radius: var(--radius-sm);
+    width: 38px;
+    height: 38px;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.is-open {
+    transform: translateX(0);
+    box-shadow: var(--shadow-lg);
+  }
+
+  body.sidebar-open .sidebar-backdrop {
+    display: block;
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+    padding: 20px 16px 32px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .login-card {
+    padding: 28px 22px;
+  }
+
+  .modal-dialog {
+    margin: 12px;
+  }
+}
